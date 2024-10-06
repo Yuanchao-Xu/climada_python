@@ -1093,6 +1093,9 @@ class Hazard(HazardIO, HazardPlot):
 
         """
         uniq_cent_idx, indices = np.unique(cent_idx, return_inverse=True)
+        # intensity is a matrix class from SciPy, 'data' within it means non-zero values
+        # so mdr gets an array from the matrix, this array only has one non-zero value (for point 1294), there might
+        # be more than one non-zero values for other centroid
         mdr = self.intensity[:, uniq_cent_idx]
         if impf.calc_mdr(0) == 0:
             mdr.data = impf.calc_mdr(mdr.data)

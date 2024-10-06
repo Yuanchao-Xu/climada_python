@@ -433,7 +433,7 @@ class Exposures():
             raise ValueError('Set hazard and exposure to same CRS first!')
         # Note: equal_crs is tested here, rather than within match_centroids(),
         # because exp.gdf.crs may not be defined, but exp.crs must be defined.
-
+        # hazard.centroids is a geographical matrix with size 46*71 (defined before), this assigned_centr is the id matching the coordinates of the exposure
         assigned_centr = u_coord.match_centroids(self.gdf, hazard.centroids,
                         distance=distance, threshold=threshold)
         self.gdf[centr_haz] = assigned_centr

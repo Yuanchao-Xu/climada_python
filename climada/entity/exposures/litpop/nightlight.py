@@ -30,7 +30,8 @@ import rasterio
 import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
-from osgeo import gdal
+#see osgeo not able to install, can directly import gdal
+import gdal
 from PIL import Image
 from shapefile import Shape
 

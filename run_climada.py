@@ -53,7 +53,7 @@ from climada.hazard import TropCyclone
 haz = TropCyclone.from_tracks(tracks_2022, centroids=cent)
 """
 through a FUNCTION calculate_scale_factor(ref_year, rcp_scenario) to calculate a factor
-then apply the factor into the orginal intensity to get new intensity
+then apply the factor into the original intensity to get new intensity
 """
 haz_85 = haz.apply_climate_scenario_knu(ref_year=2050,rcp_scenario=85)
 #print(haz_85.intensity)
@@ -63,7 +63,6 @@ from climada.entity import Exposures, Entity
 # that's because the name cannot be found, in "site-packages" folder, find gdal package, usually shows as "GDAL 3.6.2 ****"
 # simply change the package name  to "gdal", then it can read
 
-
 ent = Entity()
 
 exp_pnt = Exposures(crs='epsg:4326') #set coordinate system
@@ -72,7 +71,7 @@ exp_pnt = Exposures(crs='epsg:4326') #set coordinate system
 #exp_pnt.gdf['value'] = np.array([2.525e9,1.289e9,1.408e9,2.459e9,8.770e8,2.042e9,1.243e7,2.021e7,3.064e6,2.550e7,1.279e7,2.636e7])
 exp_pnt.gdf['latitude'] = np.array([22.40])
 exp_pnt.gdf['longitude'] = np.array([113.97])
-exp_pnt.gdf['value'] = np.array([2.525e9])
+exp_pnt.gdf['value'] = np.array([1000000])
 
 exp_pnt.check()
 #exp_pnt.plot_scatter(buffer=0.05)
@@ -92,14 +91,40 @@ ent.exposures.gdf['impf_TC'] = 9
 
 from climada.engine import ImpactCalc
 """
-#the code below identifies hazard by centroids
-        if assign_centroids:
-            self.exposures.assign_centroids(self.hazard, overwrite=True)
+# the code below identifies hazard by centroids
+    
+    exposure -> self.exposures.assign_centroids() -> u_coord.match_centroids
 
-then FUNCTION u_coord.match_centroids is used to match the centroids with closest hazard and gives back the index of hazard coordinates
-can use check function name in copilot
+it matches the centroids with closest hazard and gives back the index of hazard coordinates
+can check the above function name in copilot to get more details
+
+The hazard data has 3 dimensions with a geographical matrix plus different events.
+climada first locate the exposure in the geographical matrix (id 1294 is obtained in this step)
+There are 32 events found in the bound defined as 'cent' above. For certain points in the geographical matrix, 
+there might be several events hitting the point, but this time only one (the 22th out of the 32 events)
+If there are multiple events hitting, the impact will do a matrix multiplication and return an array
+of impacts.
+
 """
 impactcal = ImpactCalc(ent.exposures,ent.impact_funcs,haz_85)
+
+"""
+Calculate the mean damage ratio (mdr) and the id of hazard within the events:
+
+    impact_matrix() -> hazard.get_mdr() ->
+    mdr = self.intensity[:, uniq_cent_idx]
+
+mdr returns an array of different events, in which it picks up the event hitting the exposure,
+only one event is valid in the array (non-zero value) in this case.
+
+Frequency of the events:
+
+last step above has already assigned the index of the intensity, this step only to find the mdr using index
+the results are further multiplied by frequency through 'eai_exp_from_mat(mat, freq)' to get the expected/annual average impact, and stored in imp's attributes
+
+to be noted and as explained above, although there is only one impact number in this case, the impact will be
+an array if multiple impacts are calculated
+"""
 imp = impactcal.impact(save_mat=True)
 
 
@@ -108,13 +133,4 @@ print('Expected Annual Impact:{:.3e} HKD'.format(imp.aai_agg))
 
 imp.plot_basemap_eai_exposure(buffer=0.1)
 
-"""
-For issues "certificate verify failed: unable to get local issuer certificate"
 
-first generate certificate, then run below code 
-
-import ssl
-import certifi
-
-ssl._create_default_https_context = ssl._create_unverified_context
-"""

@@ -187,6 +187,8 @@ class ImpactCalc():
         """
         if save_mat:
             imp_mat = self.stitch_impact_matrix(imp_mat_gen)
+            # at this step, impact loss has already been calculated for once, below step calculates other factors considering frequency etc.,
+            # step in to see further calculations on aai,
             at_event, eai_exp, aai_agg = \
                 self.risk_metrics(imp_mat, self.hazard.frequency)
         else:
@@ -246,6 +248,7 @@ class ImpactCalc():
             the returned GeoDataFrame, otherwise it is included if present.
         """
         if assign_centroids:
+            # assign exposure centroids to hazard centroids
             self.exposures.assign_centroids(self.hazard, overwrite=True)
         elif self.hazard.centr_exp_col not in self.exposures.gdf.columns:
             raise ValueError("'assign_centroids' is set to 'False' but no centroids are assigned"
@@ -315,6 +318,7 @@ class ImpactCalc():
             return np.array_split(idx_exp_impf, n_chunks)
 
         for impf_id in exp_gdf[impf_col].dropna().unique():
+            # impact function
             impf = self.impfset.get_func(
                 haz_type=self.hazard.haz_type, fun_id=impf_id
                 )
@@ -393,6 +397,8 @@ class ImpactCalc():
         """
         n_exp_pnt = len(cent_idx)  # implicitly checks in matrix assignement whether
                                    # len(cent_idx) == len(exp_values)
+        # this one is the one to get mean damage ratio with centroid index and impact function
+        # mdr is an array with the id of damage within events
         mdr = self.hazard.get_mdr(cent_idx, impf)
         exp_values_csr = sparse.csr_matrix(  # vector 1 x exp_size
             (exp_values, np.arange(n_exp_pnt), [0, n_exp_pnt]),
@@ -411,6 +417,7 @@ class ImpactCalc():
         # cols: exposure point index within self.exposures
         data, row, col = np.hstack([
             (mat.data, mat.nonzero()[0], self._orig_exp_idx[idx][mat.nonzero()[1]])
+            # step in below code to see the multiplication of impact and exposure
             for mat, idx in imp_mat_gen
             ])
         return sparse.csr_matrix(
@@ -442,6 +449,7 @@ class ImpactCalc():
         eai_exp = np.zeros(self.n_exp_pnt)
         for sub_imp_mat, idx in imp_mat_gen:
             at_event += self.at_event_from_mat(sub_imp_mat)
+            # this one calculates the expected annual impact, see above definitions
             eai_exp[self._orig_exp_idx[idx]] += \
                 self.eai_exp_from_mat(sub_imp_mat, self.hazard.frequency)
         aai_agg = self.aai_agg_from_eai_exp(eai_exp)
@@ -526,6 +534,7 @@ class ImpactCalc():
         freq_csr = sparse.csr_matrix(   #vector n_events x 1
             (freq, np.zeros(n_events), np.arange(n_events + 1)),
             shape=(n_events, 1))
+        # mat.multiply does a matrix multiplication with impact and frequency
         return mat.multiply(freq_csr).sum(axis=0).A1
 
     @staticmethod

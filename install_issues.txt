@@ -1,0 +1,17 @@
+#several issues on MAC, PyCharm
+
+1. Climada python version 3.9.*, make sure it's the correct python version. No need separately install, use PyCharm to install, no need to install Anaconda either.\
+
+2. "osgeos not found": can't install osgeos but can install gdal, the same. but climada has a line "from osgeos import gdal", so it still needs osgeos, just change climada's code to "import gdal".
+If using conda to install, the package may be installed into other folders, need to mannually copy paste to the project environment.\
+
+3. issues "certificate verify failed: unable to get local issuer certificate": Some issue between Mac and python, since some version, python cannot leverage Mac's certificate, so need a separate one.
+First need to have a file generate certificates, stored in this folder as well. Run that code, a file called "Certificates.command" is generated. Don't know why "./Install\\ Certificates.command" doesn't work on Mac, even in the same directory, so need to mannualy find the command file, double click  to run. if still not working, run below:\
+
+"
+import ssl
+import certifi
+
+ssl._create_default_https_context = ssl._create_unverified_context}
+"
+

@@ -287,7 +287,9 @@ class TropCyclone(Hazard):
             [idx_centr_filter] = (np.abs(centroids.lat) <= max_latitude).nonzero()
         else:
             # Select centroids which are inside max_dist_inland_km and lat <= max_latitude
+
             if 'dist_coast' not in centroids.gdf.columns:
+                # If gdf has no 'dist_coast' attribution, it will get default one
                 dist_coast = centroids.get_dist_coast()
             else:
                 dist_coast = centroids.gdf.dist_coast.values
@@ -303,6 +305,7 @@ class TropCyclone(Hazard):
         )
 
         # Restrict to coastal centroids within reach of any of the tracks
+        #
         t_lon_min, t_lat_min, t_lon_max, t_lat_max = tracks.get_bounds(deg_buffer=max_dist_eye_deg)
         t_mid_lon = 0.5 * (t_lon_min + t_lon_max)
         filtered_centroids = centroids.coord[idx_centr_filter]
@@ -358,6 +361,7 @@ class TropCyclone(Hazard):
 
         LOGGER.debug('Concatenate events.')
         haz = cls.concat(tc_haz_list)
+        # haz there are 32 tracks, each of them has 3266 centroids
         haz.pool = pool
         haz.intensity_thres = intensity_thres
         LOGGER.debug('Compute frequency.')
